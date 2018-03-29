@@ -1,0 +1,1 @@
+This script grabs all computer accounts from AD and tries to create an RDP Connection Manager file with the data.

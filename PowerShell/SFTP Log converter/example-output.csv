@@ -1,0 +1,4 @@
+LogTime;logDescription;logService;logSessionid;logType;logSeverity;logUser;logLstnconnaddr;logCliconnaddr;logCmd;logParams;logAbsfile;logFilesize;logTranstime;logSguid
+20-07-2017 00:00:00;Open file SearchStem_Chunk35.js, mode Create, access Write, share None;SFTP;45873014;1;0;cap;5.6.7.8:22;9.0.1.2:35278;open-write;SearchStem_Chunk35.js;\\fileclus\FTP\patch\Leg\CR\Data\SearchStem_Chunk35.js;-;-;D569AD7A-73E6-4A13-A2B6-C9380CEFF3D0
+20-07-2017 00:00:00;Connection established;SSH;41571664;0;0;-;5.6.7.8:22;9.0.1.2:60406;-;-;-;-;-;D569AD7A-73E6-4A13-A2B6-C9380CEFF3D0
+20-07-2017 00:00:00;Finished writing file SearchStem_Chunk35.js;SFTP;45873014;1;0;dcap;5.6.7.8:22;;9.0.1.2:35278;close-write;SearchStem_Chunk35.js;\\fileclus\FTP\patch\Leg\CR\Data\SearchStem_Chunk35.js;29888;46;D569AD7A-73E6-4A13-A2B6-C9380CEFF3D0

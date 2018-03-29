@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<log>
+  <entry>
+    <log_time>20170720-00:00:00</log_time>
+    <description><![CDATA[Open file SearchStem_Chunk35.js, mode Create, access Write, share None]]></description>
+    <service>SFTP</service>
+    <sessionid>45873014</sessionid>
+    <type>1</type>    <severity>0</severity>
+    <user>cap</user>
+    <host>1.2.3.4</host>
+    <lstnconnaddr>5.6.7.8:22</lstnconnaddr>
+    <cliconnaddr>9.0.1.2:35278</cliconnaddr>
+    <cmd>open-write</cmd>
+    <params><![CDATA[SearchStem_Chunk35.js]]></params>
+    <absfile><![CDATA[\\fileclus\FTP\patch\Leg\CR\Data\SearchStem_Chunk35.js]]></absfile>
+    <sguid>D569AD7A-73E6-4A13-A2B6-C9380CEFF3D0</sguid>
+  </entry>
+  <entry>
+    <log_time>20170720-00:00:00</log_time>
+    <description><![CDATA[Connection established]]></description>
+    <service>SSH</service>
+    <sessionid>41571664</sessionid>
+    <type>0</type>    <severity>0</severity>
+    <lstnconnaddr>5.6.7.8:22</lstnconnaddr>
+    <cliconnaddr>9.0.1.2:35278</cliconnaddr>
+    <sguid>D569AD7A-73E6-4A13-A2B6-C9380CEFF3D0</sguid>
+  </entry>
+ </log>

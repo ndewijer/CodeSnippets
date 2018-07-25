@@ -19,9 +19,6 @@ function Convert-SCSITargetIdToDeviceName
 	return $deviceName
 }
 
-Set-AWSCredentials -AccessKey $env:AWS_ACCESS_KEY_ID -SecretKey $env:AWS_SECRET_ACCESS_KEY -SessionToken $env:AWS_SESSION_TOKEN
-
-
 Try {
 	$InstanceId = Get-EC2InstanceMetadata "meta-data/instance-id"
 	$AZ = Get-EC2InstanceMetadata "meta-data/placement/availability-zone"

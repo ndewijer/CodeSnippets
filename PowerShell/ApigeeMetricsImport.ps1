@@ -4,7 +4,7 @@
 ApigeeMetricsImport.ps1
 
 .SYNOPSIS  
-Gets Apigee API data
+Gets Apigee API data and outputs to console
  
 .DESCRIPTION 
 Calls API of Apigee. If unauthorized, it will renew Access (and Refresh) tokens where required.
@@ -34,21 +34,31 @@ Author:
 #>
 
 # Global Variables 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $global:LoggingEnabled = $true
 $global:loop = 0
 $global:maxLoop = 2
 $global:scriptPath = $PSScriptRoot
+
+#Apigee Variables
 $global:tokenURL = "https://login.apigee.com/oauth/token"
 $global:apiURL = "https://apimonitoring.enterprise.apigee.com"
 $global:apiQuery = "/metrics/traffic"
 $global:apiVariables = @{
-    org      = '';
+    org      = 'exactonline';
     interval = '1m';
     groupBy  = 'statusCode';
     env      = 'prod';
-    from     = '-2m';
+    from     = '-6m';
     to       = '-1m';
 }
+
+#AWS Variables
+$global:awsDestinationAccountId = ""
+$global:awsTakeRoleARN = ""
+$global:awsTakeRoleSessionName = ""
+$global:awsSecretID = ""
+$global:awsSecretRegion = ""
 
 # Import Libraries
 
@@ -62,7 +72,17 @@ function RenewRefreshToken {
         StopAll("Cannot access AWS secret. Loop higher than $maxloop.", 110)
     }
     try {
-        $secret = Get-SECSecretValue -SecretId "MGT0_Apigee_Splunkuser" -Region "eu-west-1" 
+        if ( (Get-EC2InstanceMetadata -Category IdentityDocument | ConvertFrom-Json | Select -ExpandProperty accountId) -eq $awsDestinationAccountId) {
+            $params = @{}
+        }
+        else {
+            $params = @{
+                Credential = (Use-STSRole -RoleArn $awsTakeRoleARN -RoleSessionName $awsTakeRoleSessionName).Credentials
+                Region     = $awsSecretRegion
+            }
+        }
+
+        $secret = Get-SECSecretValue @params -SecretId $awsSecretID
     }
     catch {StopAll("Cannot access AWS secret.", 103)}   
 
@@ -206,6 +226,7 @@ function main {
     $arrResults = New-Object System.Collections.ArrayList
     if ($resultJson.results.series) {
         $resultJson.results.series | % {
+            $series = $_
             $ObjResult = New-Object PsObject
             $ObjResult.PsObject.TypeNames.Insert(0, 'ObjResult')
             
@@ -215,26 +236,25 @@ function main {
             $ObjResult | Add-Member -MemberType NoteProperty -Name org -Value $_.tags.org
             $ObjResult | Add-Member -MemberType NoteProperty -Name region -Value $_.tags.region
 
-            $_.columns | % {
-                $ObjResult | Add-Member -MemberType NoteProperty -Name $_ -Value '' 
-            }
+            for ($i = 0; $i -lt $_.columns.count; $i++) {
+                $ObjResult | Add-Member -MemberType NoteProperty -Name $series.columns[$i] -Value '' 
 
-            $_.values | % {
-                $ObjResult.time = $_[0].ToString("o")
-                $ObjResult.count = [int]$_[1]
-                $ObjResult.rate = [decimal]$_[2] 
+                switch ($series.values[$i][$i].getType().Name) {
+                    'datetime' {$ObjResult.($series.columns[$i]) = $series.values[$i][$i].ToString("o"); break }
+                    'string' { $ObjResult.($series.columns[$i]) = $series.values[$i][$i]; break }
+                    'Int32' { $ObjResult.($series.columns[$i]) = [int]$series.values[$i][$i]; break }
+                    'Int64' { $ObjResult.($series.columns[$i]) = [int]$series.values[$i][$i]; break }
+                    'Decimal' { $ObjResult.($series.columns[$i]) = [decimal]$series.values[$i][$i]; break }
+                }
+
             }
             [void]$arrResults.Add($ObjResult)
         }
-
         Write-Output $arrResults | ft
-
-        
     }
     else {
         Log "No results found"
     }
-
 }
 
 Function Log($logText) {

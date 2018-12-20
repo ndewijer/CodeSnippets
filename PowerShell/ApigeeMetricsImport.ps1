@@ -245,6 +245,7 @@ function main {
                     'Int32' { $ObjResult.($series.columns[$i]) = [int]$series.values[$i][$i]; break }
                     'Int64' { $ObjResult.($series.columns[$i]) = [int]$series.values[$i][$i]; break }
                     'Decimal' { $ObjResult.($series.columns[$i]) = [decimal]$series.values[$i][$i]; break }
+                    'Double' { $ObjResult.($series.columns[$i]) = [decimal]$series.values[$i][$i]; break }
                 }
 
             }

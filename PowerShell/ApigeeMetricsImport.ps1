@@ -105,17 +105,19 @@ function RenewAccessToken {
             if ($loop -gt $maxloop) {
                 StopAll("Cannot access refresh token, loop higher than $maxloop.", 110)
             }
-            try {
-                $refreshtoken = get-content -path $scriptPath/refreshtoken
-                break
+            if (Test-Path -Path $scriptPath/refreshtoken) {
+                try {
+                    $refreshtoken = get-content -path $scriptPath/refreshtoken
+                    break
+                }
+                catch {StopAll("Cannot access refresh token", 102)}
             }
-            catch {StopAll("Cannot access refresh token", 102)}
+            else {
+                Log "no Refresh token, renewing."
             
-            Log "no Refresh token, renewing."
-            
-            RenewRefreshToken
-            $loop++
-    
+                RenewRefreshToken
+                $loop++
+            }
         } until ($refreshtoken)
 
         if ($loop -gt $maxloop) {
@@ -162,17 +164,19 @@ function GetContent {
             if ($loop -gt $maxloop) {
                 StopAll("Cannot access refresh token, loop higher than $maxloop.", 110)
             }
-            try {
-                $accessToken = get-content -path $scriptPath/accessToken
-                break
+            if (test-path -Path $scriptPath/accessToken) {
+                try {
+                    $accessToken = get-content -path $scriptPath/accessToken
+                    break
+                }
+                catch {StopAll("Cannot access access token", 102)}
             }
-            catch {StopAll("Cannot access refresh token", 102)}
-            
-            Log "no Refresh token, renewing."
-            
-            RenewAccessToken
-            $loop++
-    
+            else {
+                Log "no access token, renewing."
+                
+                RenewAccessToken
+                $loop++
+            }
         } until ($accessToken)
 
         $resultHeaders = @{}

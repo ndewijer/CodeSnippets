@@ -81,7 +81,6 @@ function RenewRefreshToken {
                 Region     = $awsSecretRegion
             }
         }
-
         $secret = Get-SECSecretValue @params -SecretId $awsSecretID
     }
     catch {StopAll("Cannot access AWS secret.", 103)}   
@@ -161,7 +160,6 @@ function RenewAccessToken {
 
     } until ($accessTokenRequest.StatusCode -eq 200)
 
-
     $accessTokenJson = $accessTokenRequest.Content | ConvertFrom-Json
 
     try {
@@ -172,7 +170,6 @@ function RenewAccessToken {
         StopAll ("Cannot write to Accesstoken file", 102)
     }
     StopAll("Here be dragons. (Renewing refresh token)", 666)
-    
 }
 
 function GetContent {
@@ -227,29 +224,31 @@ function main {
     if ($resultJson.results.series) {
         $resultJson.results.series | % {
             $series = $_
-            $ObjResult = New-Object PsObject
-            $ObjResult.PsObject.TypeNames.Insert(0, 'ObjResult')
-            
-            $ObjResult | Add-Member -MemberType NoteProperty -Name env -Value $_.tags.env
-            $ObjResult | Add-Member -MemberType NoteProperty -Name faultCodeName -Value $_.tags.statusCode
-            $ObjResult | Add-Member -MemberType NoteProperty -Name intervalSeconds -Value $_.tags.intervalSeconds
-            $ObjResult | Add-Member -MemberType NoteProperty -Name org -Value $_.tags.org
-            $ObjResult | Add-Member -MemberType NoteProperty -Name region -Value $_.tags.region
-
-            for ($i = 0; $i -lt $_.columns.count; $i++) {
-                $ObjResult | Add-Member -MemberType NoteProperty -Name $series.columns[$i] -Value '' 
-
-                switch ($series.values[$i][$i].getType().Name) {
-                    'datetime' {$ObjResult.($series.columns[$i]) = $series.values[$i][$i].ToString("o"); break }
-                    'string' { $ObjResult.($series.columns[$i]) = $series.values[$i][$i]; break }
-                    'Int32' { $ObjResult.($series.columns[$i]) = [int]$series.values[$i][$i]; break }
-                    'Int64' { $ObjResult.($series.columns[$i]) = [int]$series.values[$i][$i]; break }
-                    'Decimal' { $ObjResult.($series.columns[$i]) = [decimal]$series.values[$i][$i]; break }
-                    'Double' { $ObjResult.($series.columns[$i]) = [decimal]$series.values[$i][$i]; break }
+            $_.values | % {
+                $values = $_
+                $ObjResult = New-Object PsObject
+                $ObjResult.PsObject.TypeNames.Insert(0, 'ObjResult')
+                    
+                $ObjResult | Add-Member -MemberType NoteProperty -Name env -Value $series.tags.env
+                $ObjResult | Add-Member -MemberType NoteProperty -Name faultCodeName -Value $series.tags.statusCode
+                $ObjResult | Add-Member -MemberType NoteProperty -Name intervalSeconds -Value $series.tags.intervalSeconds
+                $ObjResult | Add-Member -MemberType NoteProperty -Name org -Value $series.tags.org
+                $ObjResult | Add-Member -MemberType NoteProperty -Name region -Value $series.tags.region
+                
+                for ($i = 0; $i -lt $series.columns.count; $i++) {
+                    $ObjResult | Add-Member -MemberType NoteProperty -Name $series.columns[$i] -Value '' 
+        
+                    switch ($_[$i].getType().Name) {
+                        'datetime' {$ObjResult.($series.columns[$i]) = $values[$i].ToString("o"); break }
+                        'string' { $ObjResult.($series.columns[$i]) = $values[$i]; break }
+                        'Int32' { $ObjResult.($series.columns[$i]) = [int]$values[$i]; break }
+                        'Int64' { $ObjResult.($series.columns[$i]) = [int]$values[$i]; break }
+                        'Decimal' { $ObjResult.($series.columns[$i]) = [decimal]$values[$i]; break }
+                        'Double' { $ObjResult.($series.columns[$i]) = [decimal]$values[$i]; break }
+                    }
                 }
-
-            }
-            [void]$arrResults.Add($ObjResult)
+                [void]$arrResults.Add($ObjResult)
+            }   
         }
         Write-Output $arrResults | ft
     }

@@ -142,6 +142,11 @@ function RenewRefreshToken {
 
     $resultJson = $result | ConvertFrom-Json
 
+    $secret = $Null
+    $secretTable = $Null
+    $body = $Null
+    [System.GC]::Collect()
+
     try {
         Set-Content -Path $scriptPath/accesstoken -Value ("Bearer " + $resultJson.access_token)
         Log "Successfully written access token"

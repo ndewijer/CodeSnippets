@@ -49,34 +49,36 @@ $global:scriptPath = $PSScriptRoot
 
 #Apigee Variables
 
-# traffic API settings
+
 $global:tokenURL = "https://login.apigee.com/oauth/token"
 $global:apiURL = "https://apimonitoring.enterprise.apigee.com"
-$global:apiQuery = "/metrics/traffic"
-$global:apiVariables = @{
-    org      = '';
-    interval = '1m';
-    groupBy  = 'statusCode';
-    env      = 'prod';
-    from     = '-6min';
-    to       = '-1min';
-}
-
-<#
-# latency API settings
-$global:apiQuery = "/metrics/latency"
-$global:apiVariables = @{
-    org      = '';
-    percentile = "95";
-    interval = '1m';
-    windowsize = '1m';
-    select = 'totalLatency,targetLatency';
-    groupBy  = 'org,env,region,proxy';
-    env      = 'prod';
-    from     = '-6min';
-    to       = '-1min';
-}
-#>
+$global:apiVariables = @(
+    # traffic API settings    
+    @{
+        '/metrics/traffic' = @{
+            org      = '';
+            interval = '1m';
+            groupBy  = 'statusCode';
+            env      = 'prod';
+            from     = '-6min';
+            to       = '-1min';
+        }
+    }
+    # latency API settings
+    @{
+        '/metrics/latency' = @{
+            org        = '';
+            percentile = "95";
+            interval   = '1m';
+            windowsize = '1m';
+            select     = 'totalLatency,targetLatency';
+            groupBy    = 'org,env,region,proxy';
+            env        = 'prod';
+            from       = '-6min';
+            to         = '-1min';
+        }
+    }
+)
 
 #AWS Variables
 $global:awsDestinationAccountId = ""
@@ -249,6 +251,7 @@ function GetContent {
     #>
 
     param (
+        [hashtable]$content
     )   
     do {
         do {
@@ -274,7 +277,7 @@ function GetContent {
         $resultHeaders.Add("Authorization", $accessToken)
         
         try {
-            $result = Invoke-WebRequest -Uri $apiURL$apiQuery -Headers $resultHeaders -Body $apiVariables -UseBasicParsing
+            $result = Invoke-webRequest -Uri ($apiURL + [string]$content.Keys) -Headers $resultHeaders -Body $content.([string]$content.keys) -UseBasicParsing
             Log "Successfully retrieved api data"
         }
         catch { 
@@ -309,58 +312,58 @@ function main {
     $startDate = Get-Date
     Log ("------ Starting Logging for $ScriptName on " + $startDate.ToShortDateString() + " at " + $startDate.ToShortTimeString() + " ------")    
 
-    #Get data from the API
-    $resultJson = GetContent
+    $apiVariables | % {
+        #Get data from the API
+        $resultJson = GetContent ($_)
 
-    #Setup main array for entries
-    $arrResults = New-Object System.Collections.ArrayList
+        #Setup main array for entries
+        $arrResults = New-Object System.Collections.ArrayList
 
-    #Check if any data was returned from the API
-    if ($resultJson.results.series) {
-        Log "Converting API result to readable list"
-        $resultJson.results.series | % {
-            $series = $_
-            $_.values | % {
-                $values = $_
+        #Check if any data was returned from the API
+        if ($resultJson.results.series) {
+            Log "Converting API result to readable list"
+            $resultJson.results.series | % {
+                $series = $_
+                $_.values | % {
+                    $values = $_
 
-                #Create object to be placed in array
-                $ObjResult = New-Object PsObject
-                $ObjResult.PsObject.TypeNames.Insert(0, 'ObjResult')
+                    #Create object to be placed in array
+                    $ObjResult = New-Object PsObject
+                    $ObjResult.PsObject.TypeNames.Insert(0, 'ObjResult')
+                        
+                    #Add headers to object
+                    $series.tags.PSObject.Properties | % {
+                        $ObjResult | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.value
+                    }
                     
-                #Add headers to object
-                $series.tags.PSObject.Properties | % {
-                    $ObjResult | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.value
-                }
-                
-                #Add key/values to Object
-                for ($i = 0; $i -lt $series.columns.count; $i++) {
-                    $ObjResult | Add-Member -MemberType NoteProperty -Name $series.columns[$i] -Value '' 
-                    if ($_[$i]) {
-                        switch ($_[$i].getType().Name) {
-                            'datetime' {$ObjResult.($series.columns[$i]) = $values[$i]; break }
-                            'string' { $ObjResult.($series.columns[$i]) = $values[$i]; break }
-                            'Int32' { $ObjResult.($series.columns[$i]) = [int]$values[$i]; break }
-                            'Int64' { $ObjResult.($series.columns[$i]) = [int]$values[$i]; break }
-                            'Decimal' { $ObjResult.($series.columns[$i]) = [decimal]$values[$i]; break }
-                            'Double' { $ObjResult.($series.columns[$i]) = [decimal]$values[$i]; break }
+                    #Add key/values to Object
+                    for ($i = 0; $i -lt $series.columns.count; $i++) {
+                        $ObjResult | Add-Member -MemberType NoteProperty -Name $series.columns[$i] -Value '' 
+                        if ($_[$i]) {
+                            switch ($_[$i].getType().Name) {
+                                'datetime' {$ObjResult.($series.columns[$i]) = $values[$i]; break }
+                                'string' { $ObjResult.($series.columns[$i]) = $values[$i]; break }
+                                'Int32' { $ObjResult.($series.columns[$i]) = [int]$values[$i]; break }
+                                'Int64' { $ObjResult.($series.columns[$i]) = [int]$values[$i]; break }
+                                'Decimal' { $ObjResult.($series.columns[$i]) = [decimal]$values[$i]; break }
+                                'Double' { $ObjResult.($series.columns[$i]) = [decimal]$values[$i]; break }
+                            }
                         }
                     }
-                }
-                #Change time to specific layout.
-                $ObjResult.time = ([datetime]$ObjResult.time).ToString("yyyy-MM-ddTHH:mm:ss.fffK")
+                    #Change time to specific layout.
+                    $ObjResult.time = ([datetime]$ObjResult.time).ToString("yyyy-MM-ddTHH:mm:ss.fffK")
 
-                #Add Object to array
-                [void]$arrResults.Add($ObjResult)
-            }   
+                    #Add Object to array
+                    [void]$arrResults.Add($ObjResult)
+                }   
+            }
+            Write-Output $arrResults | ft
+            Log "Successfully converted API results"
         }
-        Write-Output $arrResults | ft
-        Log "Successfully converted API results"
-       
+        else {
+            Log "No results found"
+        }
     }
-    else {
-        Log "No results found"
-    }
-    
     $stopDate = Get-Date
     $timespan = New-TimeSpan $startDate $stopDate
     Log ("------ Script Completion on " + $stopDate.ToShortDateString() + " at " + $stopDate.ToShortTimeString() + ". Duration: " + $timespan.TotalSeconds + " seconds ------`n")
@@ -374,7 +377,8 @@ Function Log($logText) {
     Log function, writes to log file in location defined in Global Variables
     
     .DESCRIPTION
-    Timestamps entries and then writes to log location found in Global Variables.
+    Timestamps entries and then depending on enabled, writes to log location found in Global Variables and/or Console.
+    
 
     .EXAMPLE
     Log ("This happend.")

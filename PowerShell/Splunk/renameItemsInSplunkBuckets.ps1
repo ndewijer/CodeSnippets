@@ -1,4 +1,4 @@
-$buckets = Get-ChildItem -Path "D:\Thawed\[bucket]"
+$buckets = Get-ChildItem -Path "C:\[bucket]"
 
 $count = 1
 

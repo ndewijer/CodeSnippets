@@ -80,14 +80,14 @@ def simulate_principal_policy(iam, resource_arn):
     for actions in results:
         eval_decision = actions['EvalDecision']
 
-        if(eval_decision == 'allowed'):
+        if (eval_decision == 'allowed'):
             action_name = actions['EvalActionName']
             print("Restricted action " + action_name +
                   " was granted to resource " + resource_arn)
             allows_powerful_action = True
 
     # If any restricted actions were allowed, consider the resource non-compliant.
-    if(allows_powerful_action):
+    if (allows_powerful_action):
         return "NON_COMPLIANT"
     return "COMPLIANT"
 
@@ -111,14 +111,14 @@ def simulate_managed_policy(iam, policy_arn):
     for actions in results:
         evalDecision = actions['EvalDecision']
 
-        if(evalDecision == 'allowed'):
+        if (evalDecision == 'allowed'):
             actionName = actions['EvalActionName']
             print("Restricted action " + actionName +
                   " was granted to resource " + policy_arn)
             allows_powerful_action = True
 
     # If any restricted actions were allowed, consider the resource non-compliant.
-    if(allows_powerful_action):
+    if (allows_powerful_action):
         return "NON_COMPLIANT"
     return "COMPLIANT"
 

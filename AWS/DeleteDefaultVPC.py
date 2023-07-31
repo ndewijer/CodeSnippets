@@ -50,7 +50,10 @@ def delete_subs(ec2, args):
     """
 
     try:
-        subs = ec2.describe_subnets(**args)['Subnets']
+        subs_paginator = ec2.get_paginator('describe_subnets')
+        subs_pages = subs_paginator.paginate(**args)
+        subs = [sub for subs_page in subs_pages for sub in subs_page['Subnets']]
+
     except ClientError as e:
         print(e.response['Error']['Message'])
 
@@ -72,7 +75,9 @@ def delete_rtbs(ec2, args):
     """
 
     try:
-        rtbs = ec2.describe_route_tables(**args)['RouteTables']
+        rtbs_paginator = ec2.get_paginator('describe_route_tables')
+        rtbs_pages = rtbs_paginator.paginate(**args)
+        rtbs = [rtb for rtbs_page in rtbs_pages for rtb in rtbs_page['RouteTables']]
     except ClientError as e:
         print(e.response['Error']['Message'])
 
@@ -99,7 +104,10 @@ def delete_acls(ec2, args):
     """
 
     try:
-        acls = ec2.describe_network_acls(**args)['NetworkAcls']
+        acls_paginator = ec2.get_paginator('describe_network_acls')
+        acls_pages = acls_paginator.paginate(**args)
+        acls = [acl for acls_page in acls_pages for acl in acls_page['NetworkAcls']]
+
     except ClientError as e:
         print(e.response['Error']['Message'])
 
@@ -228,7 +236,11 @@ def main(profile):
         }
 
         try:
-            eni = ec2.describe_network_interfaces(**args)['NetworkInterfaces']
+            eni_paginator = ec2.get_paginator('describe_network_interfaces')
+            eni_pages = eni_paginator.paginate(**args)
+            eni = [
+                eni for eni_pages in eni_pages for eni in eni_pages['NetworkInterfaces']]
+
         except ClientError as e:
             print(e.response['Error']['Message'])
             return
